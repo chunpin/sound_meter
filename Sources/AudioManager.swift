@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import AppKit
 
 class AudioManager: NSObject, ObservableObject {
     private var audioSession: AVCaptureSession?
@@ -9,11 +10,39 @@ class AudioManager: NSObject, ObservableObject {
     
     @Published var decibels: Float = 0.0
     @Published var isMonitoring = false
+    @Published var threshold: Float = 30.0 // Default threshold of 30 dB
+    private var lastAlertTime: Date?
+    private let alertCooldown: TimeInterval = 5 // Minimum time between alerts in seconds
     
     override init() {
         self.queue = DispatchQueue(label: "audio.capture.queue")
         super.init()
         setupAudioCapture()
+    }
+    
+    private func showAlert() {
+        let now = Date()
+        if let lastAlert = lastAlertTime, now.timeIntervalSince(lastAlert) < alertCooldown {
+            print("Skipping alert due to cooldown")
+            return // Skip if we've shown an alert recently
+        }
+        
+        lastAlertTime = now
+        print("Attempting to show notification")
+        
+        DispatchQueue.main.async {
+            let notification = NSUserNotification()
+            notification.title = "High Sound Level Detected"
+            notification.informativeText = "Sound level has exceeded \(self.threshold) dB"
+            notification.soundName = NSUserNotificationDefaultSoundName
+            
+            // Set delivery time to now
+            notification.deliveryDate = Date()
+            
+            // Add to notification center
+            NSUserNotificationCenter.default.deliver(notification)
+            print("Notification delivered")
+        }
     }
     
     private func setupAudioCapture() {
@@ -91,6 +120,11 @@ extension AudioManager: AVCaptureAudioDataOutputSampleBufferDelegate {
         
         DispatchQueue.main.async {
             self.decibels = Float(normalizedDb)
+            
+            // Check if sound level exceeds threshold
+            if self.decibels > self.threshold {
+                self.showAlert()
+            }
         }
     }
     

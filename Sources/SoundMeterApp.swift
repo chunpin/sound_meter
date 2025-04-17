@@ -3,22 +3,23 @@ import SwiftUI
 @main
 struct SoundMeterApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var audioManager = AudioManager()
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(audioManager: audioManager)
                 .frame(minWidth: 300, minHeight: 400)
                 .background(Color(NSColor.windowBackgroundColor))
         }
         .windowStyle(HiddenTitleBarWindowStyle())
+        .commands {
+            CommandGroup(replacing: .newItem) { }
+        }
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSUserNotificationCenterDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Set the app name in the menu bar
-        NSApp.setActivationPolicy(.regular)
-        
         // Create the main menu
         let mainMenu = NSMenu()
         NSApp.mainMenu = mainMenu
@@ -38,11 +39,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                                  action: #selector(NSApplication.terminate(_:)),
                                  keyEquivalent: "q"))
         
-        // Bring app to front
-        NSApp.activate(ignoringOtherApps: true)
+        // Set up notification center
+        NSUserNotificationCenter.default.delegate = self
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return true
+        return false // Don't quit when window is closed
+    }
+    
+    // MARK: - NSUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: NSUserNotificationCenter,
+                              shouldPresent notification: NSUserNotification) -> Bool {
+        return true // Always show notifications
     }
 }

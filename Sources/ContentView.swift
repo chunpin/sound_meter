@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var audioManager = AudioManager()
+    @ObservedObject var audioManager: AudioManager
     
     var body: some View {
         VStack(spacing: 20) {
@@ -33,6 +33,14 @@ struct ContentView: View {
                 }
             }
             
+            VStack(spacing: 10) {
+                Text("Alert Threshold: \(Int(audioManager.threshold)) dB")
+                    .font(.headline)
+                
+                Slider(value: $audioManager.threshold, in: 0...100, step: 1)
+                    .padding(.horizontal)
+            }
+            
             Button(action: {
                 if audioManager.isMonitoring {
                     audioManager.stopMonitoring()
@@ -59,7 +67,7 @@ struct ContentView: View {
 #if DEBUG
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView(audioManager: AudioManager())
     }
 }
 #endif 

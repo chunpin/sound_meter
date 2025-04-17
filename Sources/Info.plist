@@ -24,5 +24,7 @@
     <string>Copyright © 2024. All rights reserved.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Sound Meter needs access to your microphone to measure sound levels.</string>
+    <key>NSUserNotificationAlertStyle</key>
+    <string>alert</string>
 </dict>
 </plist> 

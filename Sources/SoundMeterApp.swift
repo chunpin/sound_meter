@@ -18,11 +18,8 @@ struct SoundMeterApp: App {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSUserNotificationCenterDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Set the app to run in the background
-        NSApp.setActivationPolicy(.accessory)
-        
         // Create the main menu
         let mainMenu = NSMenu()
         NSApp.mainMenu = mainMenu
@@ -41,9 +38,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         appMenu.addItem(NSMenuItem(title: "Quit",
                                  action: #selector(NSApplication.terminate(_:)),
                                  keyEquivalent: "q"))
+        
+        // Set up notification center
+        NSUserNotificationCenter.default.delegate = self
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false // Don't quit when window is closed
+    }
+    
+    // MARK: - NSUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: NSUserNotificationCenter,
+                              shouldPresent notification: NSUserNotification) -> Bool {
+        return true // Always show notifications
     }
 }

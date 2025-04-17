@@ -1,6 +1,6 @@
 import Foundation
 import AVFoundation
-import UserNotifications
+import AppKit
 
 class AudioManager: NSObject, ObservableObject {
     private var audioSession: AVCaptureSession?
@@ -13,56 +13,35 @@ class AudioManager: NSObject, ObservableObject {
     @Published var threshold: Float = 30.0 // Default threshold of 30 dB
     private var lastAlertTime: Date?
     private let alertCooldown: TimeInterval = 5 // Minimum time between alerts in seconds
-    private var canShowNotifications = false
     
     override init() {
         self.queue = DispatchQueue(label: "audio.capture.queue")
         super.init()
         setupAudioCapture()
-        setupNotifications()
-    }
-    
-    private func setupNotifications() {
-        // Only request notifications if we're running as a proper app
-        if Bundle.main.bundleIdentifier != nil {
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [weak self] granted, error in
-                DispatchQueue.main.async {
-                    self?.canShowNotifications = granted
-                    if let error = error {
-                        print("Error requesting notification permission: \(error.localizedDescription)")
-                    }
-                }
-            }
-        }
     }
     
     private func showAlert() {
         let now = Date()
         if let lastAlert = lastAlertTime, now.timeIntervalSince(lastAlert) < alertCooldown {
+            print("Skipping alert due to cooldown")
             return // Skip if we've shown an alert recently
         }
         
         lastAlertTime = now
+        print("Attempting to show notification")
         
-        // Only show notification if we have permission and are running as a proper app
-        if canShowNotifications {
-            let content = UNMutableNotificationContent()
-            content.title = "High Sound Level Detected"
-            content.body = "Sound level has exceeded \(threshold) dB"
-            content.sound = .default
+        DispatchQueue.main.async {
+            let notification = NSUserNotification()
+            notification.title = "High Sound Level Detected"
+            notification.informativeText = "Sound level has exceeded \(self.threshold) dB"
+            notification.soundName = NSUserNotificationDefaultSoundName
             
-            let request = UNNotificationRequest(identifier: UUID().uuidString,
-                                              content: content,
-                                              trigger: nil)
+            // Set delivery time to now
+            notification.deliveryDate = Date()
             
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error = error {
-                    print("Error showing notification: \(error.localizedDescription)")
-                }
-            }
-        } else {
-            // Fallback to console output if notifications aren't available
-            print("⚠️ High Sound Level Detected: \(decibels) dB (threshold: \(threshold) dB)")
+            // Add to notification center
+            NSUserNotificationCenter.default.deliver(notification)
+            print("Notification delivered")
         }
     }
     
